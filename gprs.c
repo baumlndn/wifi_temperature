@@ -38,6 +38,8 @@ uint8_t GPRS_Init( void )
 	/* activate global interrupt */
 	sei();
 
+	_delay_ms(1000);
+
 	/* Power on SIM900 */
 #ifdef SIM900_POWER_USAGE
 
