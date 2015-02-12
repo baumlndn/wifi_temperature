@@ -57,7 +57,10 @@ uint8_t GPRS_Init( void )
 		cli();
 
 		/* If pattern was found, set retryCnt to zero */
-		if( strstr( (char *)rx_buf, searchPattern) != NULL)
+		char tmpBuffer[255];
+		(void) USART_ReadBuffer(&tmpBuffer[0],254);
+
+		if( strstr( &tmpBuffer[0], searchPattern) != NULL)
 		{
 			retryCnt = 0;
 		}
@@ -183,11 +186,15 @@ uint8_t GPRS_SendConfirm ( char * value )
 		/* Disable interrupt */
 		cli();
 
-		if (rx_count >= 6u)
+		/* temporary copy of rx buffer */
+		char tmpBuffer[255];
+		uint8_t tmpCnt = USART_ReadBuffer( &tmpBuffer[0], 254);
+
+		if (tmpCnt >= 6u)
 		{
 			if (
-					(rx_buf[rx_count-4] == 'O') &&
-					(rx_buf[rx_count-3] == 'K')
+					(tmpBuffer[tmpCnt-4] == 'O') &&
+					(tmpBuffer[tmpCnt-3] == 'K')
 			   )
 			{
 				retVal = 0;
@@ -295,9 +302,60 @@ void GPRS_HTTPSend ( char * value )
 	}
 }
 
-uint8_t GPRS_HTTPRead ( char * value, uint8_t length )
+uint8_t GPRS_HTTPRead ( char * value, uint8_t max_length )
 {
-	return GPRS_SendConfirm("AT+HTTPREAD");
+	uint8_t tmpReturn = 0;
+
+	if (GPRS_SendConfirm("AT+HTTPREAD") == 0x00)
+	{
+		char tmpBuffer[255];
+		uint8_t tmpLength = 0;
+		uint8_t tmpCount = USART_ReadBuffer (&tmpBuffer[0],254);
+		tmpBuffer[tmpCount] = '\0';
+
+		char * tmpStart = strstr(&tmpBuffer[0],":");
+		tmpStart++;
+		char * tmpEnd = &tmpStart[0];
+		while (*tmpEnd != 0x0D)
+		{
+			tmpEnd++;
+			tmpLength++;
+		}
+
+		switch (tmpLength)
+		{
+		case 1:
+		{
+			tmpReturn = tmpStart[0] - 0x30;
+		}
+		break;
+		case 2:
+		{
+			tmpReturn = ((tmpStart[0] - 0x30) * 10) + (tmpStart[1] - 0x30);
+		}
+		break;
+		case 3:
+		{
+			tmpReturn = ((tmpStart[0] - 0x30) * 100) + ((tmpStart[1] - 0x30) * 10) + (tmpStart[2] - 0x30);
+		}
+		break;
+		default:
+		{
+			/* Do nothing */
+		}
+		break;
+		}
+
+		tmpEnd++;
+		tmpEnd++;
+
+		for (int i=0;i<tmpReturn;i++)
+		{
+			value[i] = tmpEnd[i];
+		}
+	}
+
+	return tmpReturn;
 }
 
 void GPRS_HTTPEnd (void)

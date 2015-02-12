@@ -19,7 +19,7 @@ uint8_t GPRS_SendConfirm ( char * value );
 
 uint8_t GPRS_HTTPInit ( char * url );
 void GPRS_HTTPSend ( char * value );
-uint8_t GPRS_HTTPRead ( char * value, uint8_t length );
+uint8_t GPRS_HTTPRead ( char * value, uint8_t max_length );
 void GPRS_HTTPEnd (void);
 
 #endif /* GPRS_H_ */

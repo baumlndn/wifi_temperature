@@ -23,7 +23,17 @@ int main()
 			GPRS_HTTPSend("value=55");
 
 			/* Read return data from server */
-			GPRS_HTTPRead("aaa",3);
+			char tmpArray[255];
+			uint8_t tmpCount = GPRS_HTTPRead(&tmpArray[0],254);
+
+			USART_Transmit('#');
+			USART_Transmit(tmpCount + 0x30);
+
+			for (uint8_t i=0;i<tmpCount;i++)
+			{
+				USART_Transmit(tmpArray[i]);
+			}
+			USART_Transmit('\n');
 
 			/* Terminate HTTP session */
 			GPRS_HTTPEnd();

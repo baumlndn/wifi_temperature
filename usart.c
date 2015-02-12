@@ -10,6 +10,9 @@
 #include <avr/interrupt.h>
 #include <string.h>
 
+static volatile char rx_buf[255];
+static volatile uint8_t rx_count;
+
 void USART_Init( unsigned int ubrr)
 {
 	/*Set baud rate */
@@ -44,9 +47,42 @@ unsigned char USART_Receive( void )
 	return UDR0;
 }
 
+uint8_t USART_ReadBuffer ( char * destBuffer, uint8_t maxLength )
+{
+	uint8_t idx;
+
+	cli();
+
+	if (rx_count < maxLength)
+	{
+		maxLength = rx_count;
+	}
+
+	for (idx=0;idx<maxLength;idx++)
+	{
+		destBuffer[idx] = rx_buf[idx];
+	}
+
+	sei();
+
+	return maxLength;
+}
+
+uint8_t USART_BufferLength ( void )
+{
+	uint8_t retVal;
+
+	cli();
+	retVal = rx_count;
+	sei();
+
+	return retVal;
+}
+
 ISR(USART_RX_vect)
 {
 	/* Read and store received data into buffer */
 	rx_buf[rx_count] = USART_Receive();
 	rx_count++;
+	rx_buf[rx_count] = '\0';
 }
