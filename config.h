@@ -15,7 +15,7 @@
 #define SIM900_POWER_PORT	DDRD
 #define SIM900_POWER_PIN	3
 
-#define DELAY_MS_DEFAULT	250
+#define DELAY_MS_DEFAULT	500
 #define DEBUG				1
 
 #endif /* CONFIG_H_ */

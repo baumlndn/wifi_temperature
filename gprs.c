@@ -104,7 +104,7 @@ uint8_t GPRS_Init( void )
 	}
 
 	/* wait for some time */
-	_delay_ms(1000);
+	_delay_ms(2000);
 
 	/* Open GPRS context */
 	retryCnt = 5;
@@ -289,7 +289,7 @@ void GPRS_HTTPSend ( char * value )
 	initString[14] = ( (tmp_length) + 0x30 );
 
 	GPRS_Send((unsigned char *) &(initString[0]),strlen(initString));
-	_delay_ms(500);
+	_delay_ms(2000);
 
 	if (tmpError == 0x00)
 	{
@@ -298,9 +298,11 @@ void GPRS_HTTPSend ( char * value )
 		{
 			USART_Transmit(value[idx]);
 		}
+		_delay_ms(500);
 
 		/* Send data to server */
-		tmpError = GPRS_SendConfirm("AT+HTTPACTION=1");
+		(void) GPRS_SendConfirm("AT+HTTPACTION=1");
+		_delay_ms(5000);
 	}
 }
 
