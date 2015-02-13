@@ -9,12 +9,43 @@
 #include <util/delay.h>
 #include "usart.h"
 #include "gprs.h"
+#include "ds1820.h"
 #include <avr/interrupt.h>
 #include "config.h"
+#include <avr/wdt.h>
+
+// Function Pototype
+void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
+
+// Function Implementation
+void wdt_init(void)
+{
+    MCUSR = 0;
+    wdt_disable();
+
+    return;
+}
+
+#define soft_reset()        \
+do                          \
+{                           \
+    wdt_enable(WDTO_15MS);  \
+    for(;;)                 \
+    {                       \
+    }                       \
+} while(0)
 
 int main()
 {
 	uint8_t tmpRetry = 2;
+	char txTemperature[] = "value=+00.0";
+
+	/* Initialize DS1820 */
+	DS1820_Init();
+
+	/* Read current temperature */
+	DS1820_GetTemperatureASCII(&txTemperature[6]);
+
 	/* Power on and initialize SIM900 */
 
 	while (tmpRetry > 0)
@@ -24,8 +55,9 @@ int main()
 			/* If init was successful, initialize HTTP */
 			if	( GPRS_HTTPInit("http://google.de") == 0x00 )
 			{
+
 				/* If HTTP-Init was successful, send out data */
-				GPRS_HTTPSend("value=428");
+				GPRS_HTTPSend(&txTemperature[0]);
 
 				/* Read return data from server */
 				char tmpArray[255];
@@ -59,6 +91,11 @@ int main()
 
 	while (1)
 	{
+		_delay_ms(900000);
+		/* Trigger Reset */
+		PORTC = 0xFF;
+		_delay_ms(1000);
+		soft_reset();
 	}
 
 	return 0;

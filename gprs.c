@@ -24,7 +24,6 @@ uint8_t GPRS_Init( void )
 #ifdef SIM900_POWER_USAGE
 
 	SIM900_POWER_DDR 	|= (1<<SIM900_POWER_PIN);
-	SIM900_POWER_PORT 	|= (1<<SIM900_POWER_PIN);
 
 #endif
 
@@ -43,9 +42,9 @@ uint8_t GPRS_Init( void )
 	/* Power on SIM900 */
 #ifdef SIM900_POWER_USAGE
 
-	SIM900_POWER_PORT &= ~(1<<SIM900_POWER_PIN);
-	_delay_ms(1000);
 	SIM900_POWER_PORT |=  (1<<SIM900_POWER_PIN);
+	_delay_ms(500);
+	SIM900_POWER_PORT &=  ~(1<<SIM900_POWER_PIN);
 
 #endif
 
@@ -147,9 +146,10 @@ void GPRS_End ( void )
 	/* Power off SIM900 */
 #ifdef SIM900_POWER_USAGE
 
-	SIM900_POWER_PORT &= ~(1<<SIM900_POWER_PIN);
-	_delay_ms(1000);
+	_delay_ms(2000);
 	SIM900_POWER_PORT |=  (1<<SIM900_POWER_PIN);
+	_delay_ms(1000);
+	SIM900_POWER_PORT &=  ~(1<<SIM900_POWER_PIN);
 
 #endif
 }

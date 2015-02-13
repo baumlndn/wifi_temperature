@@ -12,10 +12,15 @@
 #define SIM900_POWER_USAGE	1
 
 #define SIM900_POWER_DDR	DDRD
-#define SIM900_POWER_PORT	DDRD
-#define SIM900_POWER_PIN	3
+#define SIM900_POWER_PORT	PORTD
+#define SIM900_POWER_PIN	PD3
 
 #define DELAY_MS_DEFAULT	500
 #define DEBUG				1
+
+#define DS1820_DDR			DDRD
+#define DS1820_PORT			PORTD
+#define DS1820_PIN			PIND
+#define DS1820_BIT			PD7
 
 #endif /* CONFIG_H_ */
