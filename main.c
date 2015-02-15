@@ -13,6 +13,7 @@
 #include <avr/interrupt.h>
 #include "config.h"
 #include <avr/wdt.h>
+#include "powersave.h"
 
 // Function Pototype
 void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
@@ -39,6 +40,9 @@ int main()
 {
 	uint8_t tmpRetry = 2;
 	char txTemperature[] = "value=+00.0";
+
+	/* Initialize PowerSave */
+	PowerSave_Init();
 
 	/* Initialize DS1820 */
 	DS1820_Init();
@@ -89,13 +93,12 @@ int main()
 		}
 	}
 
+	PowerSave_s(600);
+	soft_reset();
 	while (1)
 	{
-		_delay_ms(900000);
-		/* Trigger Reset */
-		PORTC = 0xFF;
-		_delay_ms(1000);
-		soft_reset();
+		/* Do nothing */
+		/* This point should never be reached */
 	}
 
 	return 0;
