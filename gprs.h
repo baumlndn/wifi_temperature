@@ -17,6 +17,10 @@ void GPRS_End (void);
 void GPRS_Send ( unsigned char * value, uint8_t length );
 uint8_t GPRS_SendConfirm ( char * value );
 
+void GPRS_Reset ( void );
+void GPRS_SwitchOn( void );
+void GPRS_SwitchOff( void );
+
 uint8_t GPRS_HTTPInit ( char * url );
 void GPRS_HTTPSend ( char * value );
 uint8_t GPRS_HTTPRead ( char * value, uint8_t max_length );

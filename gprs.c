@@ -17,13 +17,17 @@ uint8_t GPRS_Init( void )
 	/* retry counter */
 	uint8_t retryCnt = 5;
 
-	/* Serach string - ini end */
-	char searchPattern[] = "Call Ready";
-
 	/* Initialize SIM900 power pin */
 #ifdef SIM900_POWER_USAGE
 
 	SIM900_POWER_DDR 	|= (1<<SIM900_POWER_PIN);
+
+#endif
+
+	/* Initialize SIM900 reset pin */
+#ifdef SIM900_RST_USAGE
+
+	SIM900_RST_DDR 	|= (1<<SIM900_RST_PIN);
 
 #endif
 
@@ -40,42 +44,7 @@ uint8_t GPRS_Init( void )
 	_delay_ms(1000);
 
 	/* Power on SIM900 */
-#ifdef SIM900_POWER_USAGE
-
-	SIM900_POWER_PORT |=  (1<<SIM900_POWER_PIN);
-	_delay_ms(500);
-	SIM900_POWER_PORT &=  ~(1<<SIM900_POWER_PIN);
-
-#endif
-
-	/* Initialize SIM900 */
-	_delay_ms(5000);
-
-	/* Check for init */
-	while (retryCnt > 0)
-	{
-		/* Disable global interrupt */
-		cli();
-
-		/* If pattern was found, set retryCnt to zero */
-		char tmpBuffer[255];
-		(void) USART_ReadBuffer(&tmpBuffer[0],254);
-
-		if( strstr( &tmpBuffer[0], searchPattern) != NULL)
-		{
-			retryCnt = 0;
-		}
-		else
-		{
-			retryCnt--;
-		}
-
-		/* Reenable interrupt */
-		sei();
-
-		/* wait for some time */
-		_delay_ms(1000);
-	}
+	GPRS_SwitchOn();
 
 	/* local variable used for error deteciton */
 	uint8_t tmpError = 0;
@@ -144,15 +113,97 @@ void GPRS_End ( void )
 	(void) GPRS_SendConfirm("AT+SAPBR=0,1");
 
 	/* Power off SIM900 */
-#ifdef SIM900_POWER_USAGE
+	GPRS_SwitchOff();
+}
+
+void GPRS_Reset ( void )
+{
+
+#ifdef SIM900_RST_USAGE
 
 	_delay_ms(2000);
-	SIM900_POWER_PORT |=  (1<<SIM900_POWER_PIN);
+	SIM900_RST_PORT |=  (1<<SIM900_RST_PIN);
 	_delay_ms(1000);
-	SIM900_POWER_PORT &=  ~(1<<SIM900_POWER_PIN);
+	SIM900_RST_PORT &=  ~(1<<SIM900_RST_PIN);
 
 #endif
+
 }
+
+void GPRS_SwitchOn( void )
+{
+	uint8_t retryCnt = 5;
+
+	if (GPRS_SendConfirm("AT") == 0)
+	{
+
+#ifdef SIM900_RST_USAGE
+
+		GPRS_Reset();
+
+#endif
+
+	}
+	else
+	{
+
+#ifdef SIM900_POWER_USAGE
+
+		SIM900_POWER_PORT |=  (1<<SIM900_POWER_PIN);
+		_delay_ms(500);
+		SIM900_POWER_PORT &=  ~(1<<SIM900_POWER_PIN);
+
+#endif
+
+	}
+
+	/* Initialize SIM900 */
+	_delay_ms(6000);
+
+	/* Check for init */
+	while (retryCnt > 0)
+	{
+		/* Disable global interrupt */
+		cli();
+
+		/* If pattern was found, set retryCnt to zero */
+		char tmpBuffer[255];
+
+		(void) USART_ReadBuffer(&tmpBuffer[0],254);
+
+		if( strstr( &tmpBuffer[0], "Call Ready") != NULL)
+		{
+			retryCnt = 0;
+		}
+		else
+		{
+			retryCnt--;
+		}
+
+		/* Reenable interrupt */
+		sei();
+
+		/* wait for some time */
+		_delay_ms(1000);
+	}
+}
+
+void GPRS_SwitchOff( void )
+{
+	if (GPRS_SendConfirm("AT") == 0)
+	{
+
+#ifdef SIM900_POWER_USAGE
+
+		_delay_ms(2000);
+		SIM900_POWER_PORT |=  (1<<SIM900_POWER_PIN);
+		_delay_ms(1000);
+		SIM900_POWER_PORT &=  ~(1<<SIM900_POWER_PIN);
+
+#endif
+	}
+}
+
 
 void GPRS_Send ( unsigned char * value, uint8_t length )
 {
