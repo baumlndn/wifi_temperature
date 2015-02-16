@@ -9,32 +9,11 @@
 #include <util/delay.h>
 #include "usart.h"
 #include "gprs.h"
+#include "http.h"
 #include "ds1820.h"
 #include <avr/interrupt.h>
 #include "config.h"
-#include <avr/wdt.h>
 #include "powersave.h"
-
-// Function Pototype
-void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
-
-// Function Implementation
-void wdt_init(void)
-{
-    MCUSR = 0;
-    wdt_disable();
-
-    return;
-}
-
-#define soft_reset()        \
-do                          \
-{                           \
-    wdt_enable(WDTO_15MS);  \
-    for(;;)                 \
-    {                       \
-    }                       \
-} while(0)
 
 int main()
 {
@@ -43,6 +22,9 @@ int main()
 
 	/* Initialize PowerSave */
 	PowerSave_Init();
+	PowerSave_StartTimer_s(600);
+	DDRC |= 0x02;
+	PORTC &= ~(0x02);
 
 	/* Initialize DS1820 */
 	DS1820_Init();
@@ -61,13 +43,14 @@ int main()
 			{
 
 				/* If HTTP-Init was successful, send out data */
-				GPRS_HTTPSend(&txTemperature[0]);
+				HTTP_Send(&txTemperature[0]);
 
 				/* Read return data from server */
 				char tmpArray[255];
-				uint8_t tmpCount = GPRS_HTTPRead(&tmpArray[0],254);
 
 #ifdef DEBUG
+				uint8_t tmpCount = HTTP_Read(&tmpArray[0],254);
+
 				USART_Transmit(tmpCount + 0x30);
 
 				for (uint8_t i=0;i<tmpCount;i++)
@@ -76,10 +59,15 @@ int main()
 				}
 
 				USART_Transmit('\n');
+
+#else
+
+				(void) HTTP_Read(&tmpArray[0],254);
+
 #endif
 
 				/* Terminate HTTP session */
-				GPRS_HTTPEnd();
+				HTTP_End();
 			}
 
 			/* Terminate GPRS session and power SIM900 off */
@@ -93,8 +81,10 @@ int main()
 		}
 	}
 
-	PowerSave_s(600);
-	soft_reset();
+	PORTC |=  (0x02);
+	PowerSave_Sleep();
+	PowerSave_Reset();
+
 	while (1)
 	{
 		/* Do nothing */

@@ -31,7 +31,7 @@ void PowerSave_Init(void)
     TIMSK2  = (1<<TOIE2);
 }
 
-void PowerSave_s( uint16_t sec)
+void PowerSave_StartTimer_s( uint16_t sec)
 {
 	/* Timer 2 is configured to 4 sec intervals */
 	uint8_t ticks = (uint8_t) ((sec-8) >> 2);
@@ -45,7 +45,10 @@ void PowerSave_s( uint16_t sec)
     TCNT2 = (uint8_t) (256-ticks);
 
     while (ASSR & (1<<TCN2UB));
+}
 
+void PowerSave_Sleep( void )
+{
 	/* Activate sleep */
     SMCR |= (1<<SE);
     asm volatile("sleep"::);
@@ -63,4 +66,13 @@ void PowerSave_s( uint16_t sec)
 ISR(TIMER2_OVF_vect)
 {
     asm volatile("nop"::);
+}
+
+// Function Implementation
+void wdt_init(void)
+{
+    MCUSR = 0;
+    wdt_disable();
+
+    return;
 }
