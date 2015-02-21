@@ -11,18 +11,21 @@
 
 #include "powersave.h"
 #include "config.h"
-
+#include "ds1337.h"
 
 void PowerSave_Init(void)
 {
+	/* Configure RTC */
+	DS1337_Init();
+
     //Disable timer2 interrupts
     TIMSK2  = 0;
     //Enable asynchronous mode
-    ASSR  = (1<<AS2);
+    ASSR  = (1<<AS2) | (1<<EXCLK);
     //set initial counter value
-    TCNT2=0;
-    //set prescaller 1024
-    TCCR2B |= (0<<CS22)|(0<<CS21)|(1<<CS20);
+    TCNT2 = 0;
+    //set prescaler 8
+    TCCR2B |= (0<<CS22)|(1<<CS21)|(0<<CS20);
     //wait for registers update
     while (ASSR & 0x1F);
     //clear interrupt flags
@@ -33,8 +36,8 @@ void PowerSave_Init(void)
 
 void PowerSave_StartTimer_s( uint16_t sec)
 {
-	/* Timer 2 is configured to 4 sec intervals */
-	uint8_t ticks = (uint8_t) ((sec-8) >> 2);
+	/* Timer 2 is configured to 8 sec intervals */
+	uint8_t ticks = (uint8_t) ((sec) >> 3);
 
 	sei();
 
@@ -65,14 +68,5 @@ void PowerSave_Sleep( void )
 
 ISR(TIMER2_OVF_vect)
 {
-    asm volatile("nop"::);
-}
-
-// Function Implementation
-void wdt_init(void)
-{
-    MCUSR = 0;
-    wdt_disable();
-
-    return;
+	asm volatile("nop"::);
 }

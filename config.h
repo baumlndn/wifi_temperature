@@ -21,6 +21,12 @@
 #define SIM900_RST_PORT		PORTD
 #define SIM900_RST_PIN		PD2
 
+#define WIFI_POWER_USAGE	1
+
+#define WIFI_POWER_DDR		DDRD
+#define WIFI_POWER_PORT		PORTD
+#define WIFI_POWER_PIN		PD4
+
 #define DELAY_MS_DEFAULT	500
 #define DEBUG				1
 

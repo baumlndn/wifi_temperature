@@ -8,82 +8,46 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include "usart.h"
-#include "gprs.h"
 #include "http.h"
 #include "ds1820.h"
 #include <avr/interrupt.h>
 #include "config.h"
 #include "powersave.h"
+#include "wifi.h"
 
 int main()
 {
-	uint8_t tmpRetry = 2;
-	char txTemperature[] = "value=+00.0";
-
-	/* Initialize PowerSave */
-	PowerSave_Init();
-	PowerSave_StartTimer_s(600);
-	DDRC |= 0x02;
-	PORTC &= ~(0x02);
-
 	/* Initialize DS1820 */
 	DS1820_Init();
 
-	/* Read current temperature */
-	DS1820_GetTemperatureASCII(&txTemperature[6]);
+	/* Initialize PowerSave */
+	PowerSave_Init();
 
-	/* Power on and initialize SIM900 */
+	/* Start sleep timer */
+	PowerSave_StartTimer_s(600);
 
-	while (tmpRetry > 0)
+	while (1)
 	{
-		if ( GPRS_Init() == 0x00 )
-		{
-			/* If init was successful, initialize HTTP */
-			if	( GPRS_HTTPInit("http://google.de") == 0x00 )
-			{
+		char txTemperature[] = "GET /new.php?temperature=+85.0 HTTP/1.0\r\n";
+		/* Read current temperature */
+		DS1820_GetTemperatureASCII(&txTemperature[25]);
 
-				/* If HTTP-Init was successful, send out data */
-				HTTP_Send(&txTemperature[0]);
+		/* Initialize WiFi and transmit data */
+		WiFi_Init();
+		_delay_ms(2000);
+		HTTP_Send(&txTemperature[0]);
+		_delay_ms(1000);
+		HTTP_End();
+		_delay_ms(1000);
+		WiFi_End();
 
-				/* Read return data from server */
-				char tmpArray[255];
+		/* Put ATMeag to sleep */
+		PowerSave_Sleep();
 
-#ifdef DEBUG
-				uint8_t tmpCount = HTTP_Read(&tmpArray[0],254);
-
-				USART_Transmit(tmpCount + 0x30);
-
-				for (uint8_t i=0;i<tmpCount;i++)
-				{
-					USART_Transmit(tmpArray[i]);
-				}
-
-				USART_Transmit('\n');
-
-#else
-
-				(void) HTTP_Read(&tmpArray[0],254);
-
-#endif
-
-				/* Terminate HTTP session */
-				HTTP_End();
-			}
-
-			/* Terminate GPRS session and power SIM900 off */
-			GPRS_End();
-
-			tmpRetry = 0;
-		}
-		else
-		{
-			tmpRetry--;
-		}
+		/* ATMega will wake up here */
+		PowerSave_StartTimer_s(600);
 	}
-
-	PORTC |=  (0x02);
-	PowerSave_Sleep();
-	PowerSave_Reset();
+	
 
 	while (1)
 	{
