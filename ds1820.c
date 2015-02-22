@@ -157,5 +157,4 @@ void DS1820_GetTemperatureASCII( char * destBuffer)
 
 	destBuffer[2] = (tmpRead % 10) + 0x30;
 	destBuffer[1] = (tmpRead / 10) + 0x30;
-	destBuffer[5] = '\0';
 }

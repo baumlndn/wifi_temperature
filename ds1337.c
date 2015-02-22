@@ -14,6 +14,8 @@
 
 void DS1337_Init ( void )
 {
+	_delay_ms(5000);
+
 	/* DS1337 write address */
 	char i2c_ds1337_adr = 0xD0;
 

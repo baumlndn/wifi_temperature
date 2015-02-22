@@ -14,9 +14,12 @@
 #include "config.h"
 #include "powersave.h"
 #include "wifi.h"
+#include "voltage.h"
 
 int main()
 {
+	uint16_t tmpVoltage_u16 = 0;
+
 	/* Initialize DS1820 */
 	DS1820_Init();
 
@@ -28,13 +31,19 @@ int main()
 
 	while (1)
 	{
-		char txTemperature[] = "GET /new.php?temperature=+85.0 HTTP/1.0\r\n";
+		char txTemperature[] = "GET /new.php?temperature=+85.0&voltage=00.00 HTTP/1.0\r\n";
 		/* Read current temperature */
 		DS1820_GetTemperatureASCII(&txTemperature[25]);
 
-		/* Initialize WiFi and transmit data */
+		/* Initialize WiFi */
 		WiFi_Init();
 		_delay_ms(2000);
+
+		/* Trigger supply voltage measurement */
+		tmpVoltage_u16 = Voltage_Read_mV();
+		Voltage_to_ASCII_V(&txTemperature[39],tmpVoltage_u16);
+
+		/* transmit data */
 		HTTP_Send(&txTemperature[0]);
 		_delay_ms(1000);
 		HTTP_End();
